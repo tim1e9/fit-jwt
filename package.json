@@ -1,0 +1,25 @@
+{
+  "name": "fit-jwt",
+  "version": "0.1.0",
+  "description": "A fit JavaScript library for working with JWT",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tim1e9/fit-jwt.git"
+  },
+  "keywords": [
+    "JWT",
+    "fit",
+    "NodeJS",
+    "Node"
+  ],
+  "author": "Tim Crowley",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tim1e9/fit-jwt/issues"
+  },
+  "homepage": "https://github.com/tim1e9/fit-jwt#readme"
+}
