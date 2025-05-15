@@ -1,0 +1,33 @@
+# Git and CI
+.git
+.gitignore
+.github
+
+# Local dev configs
+.vscode/
+.eslintrc.js
+.prettierrc
+
+# Tests and demos
+test/
+tests/
+__tests__/
+_samples/
+demo/
+
+# Coverage and logs
+coverage/
+*.log
+
+# Build scripts (if you publish compiled output)
+webpack.config.js
+rollup.config.js
+
+# Environment files
+.env
+.env.local
+
+# Docs (optional)
+docs/
+CONTRIBUTING.md
+CHANGELOG.md

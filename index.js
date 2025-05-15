@@ -1,7 +1,7 @@
 // @ts-check
 
 import { randomBytes, createHash, createVerify } from 'crypto';
-import { getEnvironmentVariables, getOidcProviderURL, getTokenURL } from './utils.js';
+import { getEnvironmentVariables, getPublicKey, getOidcProviderURL, getTokenURL } from './utils.js';
 
 // ----- A class / data type for the PKCE details -----
 class PkceDetails {
@@ -21,7 +21,7 @@ class JwtTokens {
     }
 }
 
-const ev = getEnvironmentVariables();
+const ev = await getEnvironmentVariables();
 const AUTH_URL = getOidcProviderURL(ev);
 const tokenURL = getTokenURL(ev);
 
@@ -42,7 +42,8 @@ const isValidSignature = (rawToken) => {
         const contentToVerify = `${rawTokenHeader}.${rawTokenPayload}`
         const rs256verifier = createVerify('RSA-SHA256');
         rs256verifier.update(contentToVerify);
-        const result = rs256verifier.verify(ev.JWT_PUBLIC_KEY, tokenSignature);
+        const publicKey = getPublicKey(ev, tokenHeader.kid);
+        const result = rs256verifier.verify(publicKey, tokenSignature);
         return result;
     } catch(exc) {
         console.error(`Error verifying the JWT signature: ${exc.message}`);

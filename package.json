@@ -1,6 +1,6 @@
 {
   "name": "fit-jwt",
-  "version": "0.9.4",
+  "version": "0.9.7",
   "description": "A fit JavaScript library for working with JWT",
   "main": "index.js",
   "type": "module",
@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/tim1e9/fit-jwt/issues"
   },
-  "homepage": "https://github.com/tim1e9/fit-jwt#readme"
+  "homepage": "https://github.com/tim1e9/fit-jwt#readme",
+  "dependencies": {
+    "asn1.js": "^5.4.1"
+  }
 }
