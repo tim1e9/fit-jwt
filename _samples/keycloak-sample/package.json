@@ -1,0 +1,21 @@
+{
+  "name": "fit-jwt-example-usage",
+  "version": "0.9.0",
+  "description": "JWT with simplified OAuth2 and OIDC",
+  "main": "server.js",
+  "type":"module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Node"
+  ],
+  "author": "Tim Crowley",
+  "license": "MIT",
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "fit-jwt": "^0.9.4"
+  }
+}

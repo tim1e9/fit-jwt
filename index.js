@@ -1,39 +1,31 @@
-import axios from 'axios';
+// @ts-check
+
 import { randomBytes, createHash, createVerify } from 'crypto';
+import { getEnvironmentVariables, getOidcProviderURL, getTokenURL } from './utils.js';
 
-
-const getEnvVar = (varName, defaultValue, requiredField = false) => {
-        const envVarVal = process.env[varName];
-        if (!envVarVal && requiredField) {
-            throw new Error(`Required environment variable missing: ${varName}`)
-        }
-        return envVarVal ? envVarVal : defaultValue;
+// ----- A class / data type for the PKCE details -----
+class PkceDetails {
+    constructor(codeVerifier, codeChallenge, method) {
+        this.codeVerifier = codeVerifier;
+        this.codeChallenge = codeChallenge;
+        this.method = method;
+    }
 }
 
-// Constants loaded from the environment (with defaults)
-const CONST_REALM_NAME = getEnvVar('REALM_NAME', null, true);
-const CONST_OAUTH_HOST = getEnvVar('OAUTH_HOST',null, true);
-const CONST_CLIENT_ID = getEnvVar('CLIENT_ID', null, true);
-const CONST_CLIENT_SECRET = getEnvVar('CLIENT_SECRET', null, true);
-const CONST_STATE = getEnvVar('OAUTH_STATE', null, true);
-const CONST_SCOPE = getEnvVar('OAUTH_SCOPE', 'openid');
-const CONST_RESPONSE_TYPE = getEnvVar('OAUTH_RESP_TYPE', 'code');
-const CONST_JWT_PUBLIC_KEY_RAW = getEnvVar('OAUTH_JWT_PUBLIC_KEY', null, true);
-const CONST_JWT_PUBLIC_KEY = `
------BEGIN PUBLIC KEY-----
-${CONST_JWT_PUBLIC_KEY_RAW}
------END PUBLIC KEY-----
-`;
+// ----- A class / data type for the three types of tokens associated with JWT -----
+class JwtTokens {
+    constructor(accessToken, idToken, refreshToken) {
+        this.accessToken = accessToken;
+        this.idToken = idToken;
+        this.refreshToken = refreshToken;
+    }
+}
 
-const CONST_CUR_HOSTNAME = getEnvVar('CUR_HOSTNAME', null);
-const CONST_REDIRECT_URI = CONST_CUR_HOSTNAME + getEnvVar('OAUTH_REDIR_URI', '/auth/callback');
+const ev = getEnvironmentVariables();
+const AUTH_URL = getOidcProviderURL(ev);
+const tokenURL = getTokenURL(ev);
 
-// Keycloak-specific URLs
-const AUTH_URL = `${CONST_OAUTH_HOST}/realms/${CONST_REALM_NAME}/protocol/openid-connect/auth?` 
-           + `client_id=${CONST_CLIENT_ID}&scope=${CONST_SCOPE}&response_type=${CONST_RESPONSE_TYPE}&`
-           + `redirect_uri=${CONST_REDIRECT_URI}&state=${CONST_STATE}`;
-const tokenURL = `${CONST_OAUTH_HOST}/realms/${CONST_REALM_NAME}/protocol/openid-connect/token`
-
+// Some implementations don't validate the signature. That would be a pretty big mistake
 const isValidSignature = (rawToken) => {
     try {
         const [ rawTokenHeader, rawTokenPayload, rawTokenSignature] = rawToken.split('.');
@@ -50,7 +42,7 @@ const isValidSignature = (rawToken) => {
         const contentToVerify = `${rawTokenHeader}.${rawTokenPayload}`
         const rs256verifier = createVerify('RSA-SHA256');
         rs256verifier.update(contentToVerify);
-        const result = rs256verifier.verify(CONST_JWT_PUBLIC_KEY, tokenSignature);
+        const result = rs256verifier.verify(ev.JWT_PUBLIC_KEY, tokenSignature);
         return result;
     } catch(exc) {
         console.error(`Error verifying the JWT signature: ${exc.message}`);
@@ -58,20 +50,21 @@ const isValidSignature = (rawToken) => {
     }
 }
 
-const getPkceDetails = (pkceMethod) => {
+// PKCE requires these three values: Code Challenge, Code Challenge Method, and Code Verifier
+const getPkceDetails = (pkceMethod ) => {
     const codeVerifier = randomBytes(32).toString('base64')
             .replace(/=/g, '').replace(/\+/g,'-',).replace(/\//,'_');
     const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64')
             .replace(/=/g, '').replace(/\+/g,'-',).replace(/\//,'_');
 
     // If the pkecMethod is 'plain' then don't encode. Other wise, use S256
-    return {
-        codeVerifier: codeVerifier,
-        codeChallenge: (pkceMethod == 'plain') ? codeVerifier : codeChallenge,
-        method: pkceMethod
-    };
+    const pkce = new PkceDetails(codeVerifier,
+        (pkceMethod == 'plain') ? codeVerifier : codeChallenge,
+         pkceMethod);
+    return pkce;
 }
 
+// Note: It's a bad idea to skip PKCE. Don't do it. In fact, getJwtToken() kinda assumes you're using it.
 const getAuthURL = (pkceDetails) => {
     return (!pkceDetails) ? AUTH_URL :
         AUTH_URL + `&code_challenge=${pkceDetails.codeChallenge}&code_challenge_method=${pkceDetails.method}`
@@ -80,67 +73,70 @@ const getAuthURL = (pkceDetails) => {
 const getJwtToken = async (code, codeVerifier) => {
     // The token request requires authentication (naturally). Unfortunately, it's not obvious
     // that it consists of the base64-encoded client ID and client secret. Now it is obvious.
-    const base64Creds = Buffer.from(`${CONST_CLIENT_ID}:${CONST_CLIENT_SECRET}`).toString('base64');
+    const base64Creds = Buffer.from(`${ev.CLIENT_ID}:${ev.CLIENT_SECRET}`).toString('base64');
     const authHeader = 'Basic ' + base64Creds;
 
-    let response = {};
+    let response;
     try {
-        response = await axios.post( tokenURL, {
-                'code': code,
-                'grant_type': 'authorization_code',
-                'client_id': CONST_CLIENT_ID,
-                'redirect_uri': CONST_REDIRECT_URI,
-                'code_verifier': codeVerifier
-            }, 
-            {
+        const formData = new URLSearchParams();
+        formData.append("code", code);
+        formData.append("grant_type", 'authorization_code');
+        formData.append("client_id", ev.CLIENT_ID);
+        formData.append("redirect_uri", ev.CUR_HOSTNAME + ev.OAUTH_REDIR_URI);
+        formData.append("code_verifier", codeVerifier);
+
+        response = await fetch(tokenURL, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Authorization': authHeader
-            }
+            },
+            body: formData.toString()
         });
+
     } catch(exc) {
         console.log(`Error: Exception thrown when attempting to obtain a token: ${exc.message}`);
         return null;
     }
 
-    const jwtTokens = {
-        'accessToken': response.data.access_token,
-        'idToken': response.data.id_token,
-        'refreshToken': response.data.refresh_token
-    }
+    // Format the response to include the three retrieved tokens
+    const allData = await response.json();
+    const jwtTokens = new JwtTokens(allData.accessToken,
+        allData.id_token, allData.refresh_token);
     return jwtTokens;
 }
 
 const refreshJwtToken = async (refreshToken) => {
-    const base64Creds = Buffer.from(`${CONST_CLIENT_ID}:${CONST_CLIENT_SECRET}`).toString('base64');
+    const base64Creds = Buffer.from(`${ev.CLIENT_ID}:${ev.CLIENT_SECRET}`).toString('base64');
     const authHeader = 'Basic ' + base64Creds;
 
-    let response = {};
+    let response;
     try {
-        response = await axios.post( tokenURL, {
-                'grant_type': 'refresh_token',
-                'client_id': CONST_CLIENT_ID,
-                'refresh_token': refreshToken
-            }, 
-            {
+        const formData = new URLSearchParams();
+        formData.append("grant_type", 'refresh_token');
+        formData.append("client_id", ev.CLIENT_ID);
+        formData.append("refresh_token", refreshToken);
+
+        response = await fetch(tokenURL, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Authorization': authHeader
-            }
+            },
+            body: formData.toString()
         });
+
     } catch(exc) {
         console.log(`Error: Exception thrown when attempting to refresh a token: ${exc.message}`);
         return null;
     }
 
-    const jwtTokens = {
-        'accessToken': response.data.access_token,
-        'idToken': response.data.id_token,
-        'refreshToken': response.data.refresh_token
-    }
+    // Format the response to include the three retrieved tokens
+    const allData = await response.json();
+    const jwtTokens = new JwtTokens(allData.accessToken,
+        allData.id_token, allData.refresh_token);
     return jwtTokens;
 }
-
 
 const getUserFromToken = (accessToken, verifyTimestamp = true, verifySignature = true) => {
     try {
@@ -174,6 +170,8 @@ const getUserFromToken = (accessToken, verifyTimestamp = true, verifySignature =
 }
 
 export {
+    PkceDetails,
+    JwtTokens,
     getAuthURL,
     getPkceDetails,
     getJwtToken,
