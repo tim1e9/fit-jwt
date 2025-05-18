@@ -6,10 +6,6 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
-// Note: This sample code stores PKCE details in a cookie to maintain them across
-// multiple calls. It's not encoded, and not really the best approach. It's probably
-// best to use a temporary session, and keep things even more secure.
-// This is done for the sample only.
 import cookieParser from 'cookie-parser';
 app.use(cookieParser());
 const cookieName = process.env.COOKIE_NAME;
@@ -18,7 +14,8 @@ const jwtHeaderName = process.env.JWT_HEADER_NAME;
 // ------------------- Authn / Authz Endpoints --------------------------------
 
 app.get('/login', (_req, res) => {
-    // We are using PKCE, and we are also mandating the S256 hash of the PKCE code
+    // We are using (Proof Key for Code Exchange) or "PKCE". Don't ask - I don't name this stuff
+    // We are also mandating the S256 hash of the PKCE code
     const pkceDetails = getPkceDetails('S256');
     res.cookie(cookieName, JSON.stringify(pkceDetails));
     const url = getAuthURL(pkceDetails);
@@ -34,6 +31,7 @@ app.get('/auth/callback', async (req, res) => {
         res.json({status: "cookie missing"})
     } else {
         const pkceDetails = JSON.parse(rawCookie);
+        // Note: getJwtToken() can throw an exception. A real app should catch and handle it.
         const jwtComponents = await getJwtToken(code, pkceDetails.codeVerifier);
     
         // Clear the cookie - it's no longer needed
@@ -85,6 +83,7 @@ app.get('/testrefresh', async (req, res) => {
     // Test the ability to refresh a JWT token. (This is just used for completeness. Consider
     // a far more comprehensive workflow for refreshing a token in a real app.)
     const token = req.header("myrefreshtoken");
+    // Note: refreshJwtToken() can throw an exception. A real app should catch and handle it.
     const newDetails = await refreshJwtToken(token);
     res.send({msg: newDetails});
 });

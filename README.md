@@ -1,5 +1,5 @@
 # fit-jwt
-A zero-dependency JavaScript library for working with JWT
+A zero-dependency JavaScript library for working with JWT and OIDC.
 
 **NOTE:** If you're looking for a complete, OAuth-compliant client, this isn't it.
 Instead, this library implements a subset of the specification. The purpose
@@ -23,10 +23,3 @@ To use it,
 Run npm pack
 Run npm publish --registry http://localhost:4873
 
-## Configuration variables
-
-There are a number of environment variables required. This is due to the nature of
-how different OAuth providers exchange information. (Example: Keycloak has the concept
-of a "relm", while other providers to not.)
-
-For this reason, environment variable details are stored within the samples.

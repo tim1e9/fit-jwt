@@ -1,7 +1,7 @@
 {
   "name": "fit-jwt",
-  "version": "0.9.7",
-  "description": "A fit JavaScript library for working with JWT",
+  "version": "0.9.9",
+  "description": "A fit JavaScript library for working with JWT and OIDC",
   "main": "index.js",
   "type": "module",
   "types": "index.d.ts",
@@ -14,6 +14,8 @@
   },
   "keywords": [
     "JWT",
+    "OIDC",
+    "OAUTH",
     "fit",
     "NodeJS",
     "Node"
@@ -25,6 +27,5 @@
   },
   "homepage": "https://github.com/tim1e9/fit-jwt#readme",
   "dependencies": {
-    "asn1.js": "^5.4.1"
   }
 }

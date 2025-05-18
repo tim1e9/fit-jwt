@@ -1,6 +1,6 @@
 # Using fit-jwt
 
-This sample application demonstrates how to use fit-jwt with Google as the OAuth provider.
+This sample application demonstrates how to use fit-jwt in a NodeJS application.
 
 Before starting, be sure that `fit-jwt` has been published to either a public NPM
 registry. (Or, to a private one, which is identified by the presence of a `.npmrc` file.)
@@ -9,7 +9,8 @@ registry. (Or, to a private one, which is identified by the presence of a `.npmr
 
 Steps to run:
 1. Install the dependencies ( `npm i` )
-2. Verify that all environment variables are properly defined. (See environment variables below)
+2. Verify that all environment variables are properly defined.
+   (See the environment variable sample files for more details.)
 3. Start the application ( `npm start` )
 4. In a browser, navigate to the main page: http://localhost:3000/ The response should
    be a simple JSON doc which reads:
@@ -51,39 +52,9 @@ Steps to run:
 10. It is also possible to refresh the JWT token by navigating to: http://localhost:3000/testrefresh
     After navigating to this URL, the refreshed tokens should be visible.
 
-## Environment Variables
 
-Variables specific to the sample application:
-- **COOKIE_NAME** The name of the cookie which shares information between the OAuth server and the sampel app
-- **JWT_HEADER_NAME** The header the sample application inspects to locate the JWT
-
-
-Variables - all providers:
-
-- **OAUTH_HOST** The hostname of the OAuth server. For local development, it's probably `http://localhost:8080`
-- **CLIENT_ID** The OAuth Client ID. Provided by the OAuth provider. (This can be human readable.)
-- **CLIENT_SECRET** The OAuth Secret. Also provided by the OAuth provider. (A long string of characters)
-- **OAUTH_STATE** A string which helps prevent cross-site scripting attacks. It should be a string.
-- **OAUTH_RESP_TYPE** This should be set to "code". However, other flows are supported.
-- **OAUTH_JWT_PUBLIC_KEY** The public key from the OAuth server. Some OAuth / JWT implementations
-  automatically retrieve this. However, in keeping in line with a "fit" approach, that feautre
-  has not yet been needed. To find the public key, refer to the OAuth provider's documentation.
-  For keycloak, it will be something like: http://localhost:8080/realms/somerealm
-
-
-### Variables - Google
-
-Google's discovery URL:
-https://accounts.google.com/.well-known/openid-configuration
-
-Google's certs:
-https://www.googleapis.com/oauth2/v3/certs
-
-
-- **REALM_NAME** The KeyCloak "Realm" (or namespace) for this particular applicaiton. (I don't
-  name these things, I just use 'em.)
-- **OAUTH_SCOPE** A Keycloak concept for aggregating a number of settings and configurations together. (This will be used to construct the authentication URL.)
-
-To find the Google certificate used to sign the JWT Token:
-http://MY_KEYCLOAK_HOST_AND_PORT/realms/myrealm
-
+## References
+PKCE - (https://datatracker.ietf.org/doc/html/rfc7636) requires these three values:
+       Code Challenge, Code Challenge Method, and Code Verifier
+       
+A nice explanation: https://pazel.dev/teach-me-pkce-proof-key-for-code-exchange-in-5-minutes

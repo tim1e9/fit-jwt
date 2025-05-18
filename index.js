@@ -65,11 +65,13 @@ const getPkceDetails = (pkceMethod ) => {
     return pkce;
 }
 
-// Note: It's a bad idea to skip PKCE. Don't do it. In fact, getJwtToken() kinda assumes you're using it.
 const getAuthURL = (pkceDetails) => {
-    return (!pkceDetails) ? AUTH_URL :
-        AUTH_URL + `&code_challenge=${pkceDetails.codeChallenge}&code_challenge_method=${pkceDetails.method}`
-}
+  const params = new URLSearchParams({
+    code_challenge: pkceDetails.codeChallenge,
+    code_challenge_method: pkceDetails.method,
+  });
+  return `${AUTH_URL}&${params.toString()}`;
+};
 
 const getJwtToken = async (code, codeVerifier) => {
     // The token request requires authentication (naturally). Unfortunately, it's not obvious
@@ -95,24 +97,24 @@ const getJwtToken = async (code, codeVerifier) => {
             body: formData.toString()
         });
 
-    } catch(exc) {
-        console.log(`Error: Exception thrown when attempting to obtain a token: ${exc.message}`);
-        return null;
-    }
+        // Format the response to include the three retrieved tokens
+        const allData = await response.json();
+        const jwtTokens = new JwtTokens(allData.accessToken,
+                                    allData.id_token, allData.refresh_token);
+        return jwtTokens;
 
-    // Format the response to include the three retrieved tokens
-    const allData = await response.json();
-    const jwtTokens = new JwtTokens(allData.accessToken,
-        allData.id_token, allData.refresh_token);
-    return jwtTokens;
+    } catch(exc) {
+        const msg = `Error: Exception thrown when attempting to obtain a token: ${exc.message}`;
+        console.error(msg);
+        throw new Error(msg)
+    }
 }
 
 const refreshJwtToken = async (refreshToken) => {
-    const base64Creds = Buffer.from(`${ev.CLIENT_ID}:${ev.CLIENT_SECRET}`).toString('base64');
-    const authHeader = 'Basic ' + base64Creds;
-
     let response;
     try {
+        const base64Creds = Buffer.from(`${ev.CLIENT_ID}:${ev.CLIENT_SECRET}`).toString('base64');
+        const authHeader = 'Basic ' + base64Creds;
         const formData = new URLSearchParams();
         formData.append("grant_type", 'refresh_token');
         formData.append("client_id", ev.CLIENT_ID);
@@ -127,16 +129,17 @@ const refreshJwtToken = async (refreshToken) => {
             body: formData.toString()
         });
 
-    } catch(exc) {
-        console.log(`Error: Exception thrown when attempting to refresh a token: ${exc.message}`);
-        return null;
-    }
+        // Format the response to include the three retrieved tokens
+        const allData = await response.json();
+        const jwtTokens = new JwtTokens(allData.accessToken,
+                                allData.id_token, allData.refresh_token);
+        return jwtTokens;
 
-    // Format the response to include the three retrieved tokens
-    const allData = await response.json();
-    const jwtTokens = new JwtTokens(allData.accessToken,
-        allData.id_token, allData.refresh_token);
-    return jwtTokens;
+    } catch(exc) {
+        const msg = `Error: Exception thrown when attempting to refresh a token: ${exc.message}`;
+        console.error(msg);
+        throw new Error(msg);
+    }
 }
 
 const getUserFromToken = (accessToken, verifyTimestamp = true, verifySignature = true) => {

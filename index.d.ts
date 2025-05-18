@@ -16,9 +16,9 @@ export function getAuthURL(pkceDetails?: PkceDetails): string;
 
 export function getPkceDetails(pkceMethod: string): PkceDetails;
 
-export function getJwtToken(code: string, codeVerifier: string): Promise<JwtTokens | null>;
+export function getJwtToken(code: string, codeVerifier: string): Promise<JwtTokens>;
 
-export function refreshJwtToken(refreshToken: string): Promise<JwtTokens | null>;
+export function refreshJwtToken(refreshToken: string): Promise<JwtTokens>;
 
 export function getUserFromToken(
   accessToken: string,
