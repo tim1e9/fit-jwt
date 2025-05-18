@@ -82,7 +82,7 @@ app.get('/aboutme', checkAuthenticated, (req, res) => {
 app.get('/testrefresh', async (req, res) => {
     // Test the ability to refresh a JWT token. (This is just used for completeness. Consider
     // a far more comprehensive workflow for refreshing a token in a real app.)
-    const token = req.header("myrefreshtoken");
+    const token = req.header("Authorization");
     // Note: refreshJwtToken() can throw an exception. A real app should catch and handle it.
     const newDetails = await refreshJwtToken(token);
     res.send({msg: newDetails});

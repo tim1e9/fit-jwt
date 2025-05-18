@@ -1,7 +1,6 @@
-// @ts-check
-
-import { randomBytes, createHash, createVerify } from 'crypto';
-import { getEnvironmentVariables, getPublicKey, getOidcProviderURL, getTokenURL } from './utils.js';
+// @ts-check intermittently, because this is actually JavaScript
+import { randomBytes, createHash } from 'crypto';
+import { getEnvironmentVariables, getOidcProviderURL, getTokenURL, isTokenValid } from './utils.js';
 
 // ----- A class / data type for the PKCE details -----
 class PkceDetails {
@@ -22,34 +21,8 @@ class JwtTokens {
 }
 
 const ev = await getEnvironmentVariables();
-const AUTH_URL = getOidcProviderURL(ev);
-const tokenURL = getTokenURL(ev);
-
-// Some implementations don't validate the signature. That would be a pretty big mistake
-const isValidSignature = (rawToken) => {
-    try {
-        const [ rawTokenHeader, rawTokenPayload, rawTokenSignature] = rawToken.split('.');
-        const tokenSignature = Buffer.from(rawTokenSignature, 'base64');
-
-        // As of now, only RS256 is supported. Consider adding support for HS256
-        const tokenHeader = JSON.parse(Buffer.from(rawTokenHeader, 'base64').toString('utf-8'));
-        if (tokenHeader.alg != "RS256") {
-            console.error(`Only the RS256 algorithm is supported. Current algorithm: ${tokenHeader.alg}`)
-            return false;
-        }
-
-        // Reconstitute the header and payload
-        const contentToVerify = `${rawTokenHeader}.${rawTokenPayload}`
-        const rs256verifier = createVerify('RSA-SHA256');
-        rs256verifier.update(contentToVerify);
-        const publicKey = getPublicKey(ev, tokenHeader.kid);
-        const result = rs256verifier.verify(publicKey, tokenSignature);
-        return result;
-    } catch(exc) {
-        console.error(`Error verifying the JWT signature: ${exc.message}`);
-        return false;
-    }
-}
+const AUTH_URL = getOidcProviderURL();
+const tokenURL = getTokenURL();
 
 // PKCE requires these three values: Code Challenge, Code Challenge Method, and Code Verifier
 const getPkceDetails = (pkceMethod ) => {
@@ -84,6 +57,7 @@ const getJwtToken = async (code, codeVerifier) => {
         const formData = new URLSearchParams();
         formData.append("code", code);
         formData.append("grant_type", 'authorization_code');
+        // @ts-ignore
         formData.append("client_id", ev.CLIENT_ID);
         formData.append("redirect_uri", ev.CUR_HOSTNAME + ev.OAUTH_REDIR_URI);
         formData.append("code_verifier", codeVerifier);
@@ -117,6 +91,7 @@ const refreshJwtToken = async (refreshToken) => {
         const authHeader = 'Basic ' + base64Creds;
         const formData = new URLSearchParams();
         formData.append("grant_type", 'refresh_token');
+        // @ts-ignore
         formData.append("client_id", ev.CLIENT_ID);
         formData.append("refresh_token", refreshToken);
 
@@ -143,34 +118,13 @@ const refreshJwtToken = async (refreshToken) => {
 }
 
 const getUserFromToken = (accessToken, verifyTimestamp = true, verifySignature = true) => {
-    try {
-        const [_jwtHeader, jwtPayload, _jwtSignature] = accessToken.split('.');
-        if (verifySignature) {
-            if (!isValidSignature(accessToken)) {
-                console.error('ERROR: JSON Signature is not valid!')
-                return null;
-            }
-        } else {
-            console.warn('WARNING: Signature not verified. THIS IS A REALLY BAD IDEA!');
-        }
-
-        const user = JSON.parse(Buffer.from(jwtPayload, 'base64').toString());
-
-        if (verifyTimestamp) {
-            // Check to see if the token has expired
-            const expTime = user.exp * 1000;  // The time is in seconds; convert it to milliseconds
-            const curTime = new Date().getTime();
-            if (expTime < curTime) {
-                console.log('The token has expired');
-                return null;
-            }
-        }
-
-        return user;
-    } catch(exc) {
-        console.log(`Error parsing the user from a token: ${exc.message}`);
+    const validToken = isTokenValid(accessToken, verifyTimestamp, verifySignature)
+    if ( !validToken) {
+        return null;
     }
-    return null;
+    const [_jwtHeader, jwtPayload, _jwtSignature] = accessToken.split('.');
+    const user = JSON.parse(Buffer.from(jwtPayload, 'base64').toString());
+    return user;
 }
 
 export {
