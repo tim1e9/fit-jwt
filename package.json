@@ -1,6 +1,6 @@
 {
   "name": "fit-jwt",
-  "version": "0.9.9",
+  "version": "0.9.10",
   "description": "A fit JavaScript library for working with JWT and OIDC",
   "main": "index.js",
   "type": "module",

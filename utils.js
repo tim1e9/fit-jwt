@@ -1,4 +1,4 @@
-// @ts-check
+// Use @ts-check intermittently, because this is actually JavaScript
 import { Buffer } from 'buffer';
 
 // ------------- Helper methods for converting key components into an RSA public key
@@ -49,30 +49,23 @@ const getPublicKey = (ev, key_id) => {
 };
 
 
-// A helper method for retrieving environment variables.
-const _getEnvVar = (varName, defaultValue, requiredField = false) => {
-  const envVarVal = process.env[varName];
-  if (!envVarVal && requiredField) {
-    throw new Error(`Required environment variable missing: ${varName}`)
-  }
-  return envVarVal ? envVarVal : defaultValue;
-}
-
 const getEnvironmentVariables = async () => {
   // Load common environment variables
   const ev = {
-    'AUTH_ENDPOINT': _getEnvVar('AUTH_ENDPOINT', null, true),
-    'TOKEN_ENDPOINT': _getEnvVar('TOKEN_ENDPOINT', null, true),
-    'OAUTH_REDIR_URI': _getEnvVar('OAUTH_REDIR_URI', '/auth/callback'), // The path relative to the host
-    'CUR_HOSTNAME': _getEnvVar('CUR_HOSTNAME', null), // It's difficult to find the host, so specify it
-    'CLIENT_ID': _getEnvVar('CLIENT_ID', null, true),
-    'CLIENT_SECRET': _getEnvVar('CLIENT_SECRET', null, true),
-    'STATE': _getEnvVar('OAUTH_STATE', null, true),
-    'SCOPE': _getEnvVar('OAUTH_SCOPE', null, true),
-    'RESPONSE_TYPE': _getEnvVar('OAUTH_RESP_TYPE', 'code'), // part of OAuth grant flow
-    'JWKS_URL': _getEnvVar('JWKS_URL', null, true), // URL to pull public keys
+    'AUTH_ENDPOINT': process.env['AUTH_ENDPOINT'],
+    'TOKEN_ENDPOINT': process.env['TOKEN_ENDPOINT'],
+    'OAUTH_REDIR_URI': process.env['OAUTH_REDIR_URI'] || '/auth/callback', // The path relative to the host
+    'CUR_HOSTNAME': process.env['CUR_HOSTNAME'], // It's difficult to find the host, so specify it
+    'CLIENT_ID': process.env['CLIENT_ID'],
+    'CLIENT_SECRET': process.env['CLIENT_SECRET'],
+    'STATE': process.env['OAUTH_STATE'],
+    'SCOPE': process.env['OAUTH_SCOPE'],
+    'RESPONSE_TYPE': process.env['OAUTH_RESP_TYPE'] || 'code', // part of OAuth grant flow
+    'JWKS_URL': process.env['JWKS_URL'], // URL to pull public keys
   }
-
+  if (Object.values(ev).some(v => !v)) {
+    throw new Error(`Not all environment variables are defined. Please review all required fields.`)
+  }
   // Load the keys (JWKS)
   const res = await fetch(ev.JWKS_URL, {
     method: 'GET', headers: { 'Content-Type': 'application/json' }
