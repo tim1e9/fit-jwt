@@ -16,6 +16,6 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "fit-jwt": "^0.9.14"
+    "fit-jwt": "^0.9.16"
   }
 }

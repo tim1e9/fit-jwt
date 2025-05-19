@@ -95,14 +95,14 @@ const getTokenURL = () => {
   return ev.TOKEN_ENDPOINT;
 }
 
-// Some implementations don't validate the signature. That would be a pretty big mistake
+// Some folks don't validate the signature. That would be a pretty big mistake
 const _isValidSignature = (rawToken) => {
     try {
         const [ rawTokenHeader, rawTokenPayload, rawTokenSignature] = rawToken.split('.');
-        const tokenSignature = Buffer.from(rawTokenSignature, 'base64');
+        const tokenSignature = Buffer.from(rawTokenSignature, 'base64url');
 
         // As of now, only RS256 is supported. Consider adding support for HS256
-        const tokenHeader = JSON.parse(Buffer.from(rawTokenHeader, 'base64').toString('utf-8'));
+        const tokenHeader = JSON.parse(Buffer.from(rawTokenHeader, 'base64url').toString('utf-8'));
         if (tokenHeader.alg != "RS256") {
             console.error(`Only the RS256 algorithm is supported. Current algorithm: ${tokenHeader.alg}`)
             return false;
@@ -132,7 +132,7 @@ const isTokenValid = (curToken, verifyTimestamp = true, verifySignature = true) 
             console.warn('WARNING: Signature not verified. THIS IS A REALLY BAD IDEA!');
         }
 
-        const jwtDetails = JSON.parse(Buffer.from(jwtPayload, 'base64').toString());
+        const jwtDetails = JSON.parse(Buffer.from(jwtPayload, 'base64url').toString());
 
         // More checks: An attacker could replay a valid token from another client or issuer
         // Make sure the returned values match what's expected

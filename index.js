@@ -26,10 +26,8 @@ const tokenURL = getTokenURL();
 
 // PKCE requires these three values: Code Challenge, Code Challenge Method, and Code Verifier
 const getPkceDetails = (pkceMethod ) => {
-    const codeVerifier = randomBytes(32).toString('base64')
-            .replace(/=/g, '').replace(/\+/g,'-',).replace(/\//,'_');
-    const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64')
-            .replace(/=/g, '').replace(/\+/g,'-',).replace(/\//,'_');
+    const codeVerifier = randomBytes(32).toString('base64url');
+    const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
 
     // If the pkecMethod is 'plain' then don't encode. Other wise, use S256
     const pkce = new PkceDetails(codeVerifier,
@@ -48,8 +46,8 @@ const getAuthURL = (pkceDetails) => {
 
 const getJwtToken = async (code, codeVerifier) => {
     // The token request requires authentication (naturally). Unfortunately, it's not obvious
-    // that it consists of the base64-encoded client ID and client secret. Now it is obvious.
-    const base64Creds = Buffer.from(`${ev.CLIENT_ID}:${ev.CLIENT_SECRET}`).toString('base64');
+    // that it consists of the url-encoded client ID and client secret. Now it is obvious.
+    const base64Creds = Buffer.from(`${ev.CLIENT_ID}:${ev.CLIENT_SECRET}`).toString('base64url');
     const authHeader = 'Basic ' + base64Creds;
 
     let response;
@@ -87,7 +85,7 @@ const getJwtToken = async (code, codeVerifier) => {
 const refreshJwtToken = async (refreshToken) => {
     let response;
     try {
-        const base64Creds = Buffer.from(`${ev.CLIENT_ID}:${ev.CLIENT_SECRET}`).toString('base64');
+        const base64Creds = Buffer.from(`${ev.CLIENT_ID}:${ev.CLIENT_SECRET}`).toString('base64url');
         const authHeader = 'Basic ' + base64Creds;
         const formData = new URLSearchParams();
         formData.append("grant_type", 'refresh_token');
@@ -123,7 +121,7 @@ const getUserFromToken = (accessToken, verifyTimestamp = true, verifySignature =
         return null;
     }
     const [_jwtHeader, jwtPayload, _jwtSignature] = accessToken.split('.');
-    const user = JSON.parse(Buffer.from(jwtPayload, 'base64').toString());
+    const user = JSON.parse(Buffer.from(jwtPayload, 'base64url').toString());
     return user;
 }
 

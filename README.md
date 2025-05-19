@@ -13,7 +13,7 @@ before going any further.
 Install the package with `npm install fit-jwt`. Then, add code to your project as necessary.
 
 **NOTE** A full example exists in the `./_samples` directory. It outlines
-everything required to use this library - including application flow.
+everything required to use this library - including application flows and environment variables.
 
 
 ## How to build it
