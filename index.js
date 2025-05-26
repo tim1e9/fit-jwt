@@ -120,8 +120,8 @@ const refreshJwtToken = async (refreshToken) => {
     }
 }
 
-const getUserFromToken = (accessToken, verifyTimestamp = true, verifySignature = true) => {
-    const validToken = isTokenValid(accessToken, verifyTimestamp, verifySignature)
+const getUserFromToken = (accessToken) => {
+    const validToken = isTokenValid(accessToken)
     if ( !validToken) {
         return null;
     }

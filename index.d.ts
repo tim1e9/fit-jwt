@@ -12,6 +12,8 @@ export class JwtTokens {
   refreshToken: string;
 }
 
+export function init(): void;
+
 export function getAuthURL(pkceDetails?: PkceDetails): string;
 
 export function getPkceDetails(pkceMethod: string): PkceDetails;
@@ -20,8 +22,4 @@ export function getJwtToken(code: string, codeVerifier: string): Promise<JwtToke
 
 export function refreshJwtToken(refreshToken: string): Promise<JwtTokens>;
 
-export function getUserFromToken(
-  accessToken: string,
-  verifyTimestamp?: boolean,
-  verifySignature?: boolean
-): Record<string, any> | null;
+export function getUserFromToken(accessToken: string): Record<string, any> | null;

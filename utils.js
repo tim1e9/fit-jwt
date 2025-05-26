@@ -121,15 +121,11 @@ const _isValidSignature = (rawToken) => {
     }
 }
 
-const isTokenValid = (curToken, verifyTimestamp = true, verifySignature = true) => {
+const isTokenValid = (curToken) => {
     try {
         const [_jwtHeader, jwtPayload, _jwtSignature] = curToken.split('.');
-        if (verifySignature) {
-            if (!_isValidSignature(curToken)) {
-                throw new Error('The JSON signature is not valid.')
-            }
-        } else {
-            console.warn('WARNING: Signature not verified. THIS IS A REALLY BAD IDEA!');
+        if (!_isValidSignature(curToken)) {
+            throw new Error('The JSON signature is not valid.')
         }
 
         const jwtDetails = JSON.parse(Buffer.from(jwtPayload, 'base64url').toString());
@@ -144,13 +140,11 @@ const isTokenValid = (curToken, verifyTimestamp = true, verifySignature = true) 
             throw new Error(`The issuer for the token is different from what is expected.`)
         }
 
-        if (verifyTimestamp) {
-            // Check to see if the token has expired
-            const expTime = jwtDetails.exp * 1000;  // The time is in seconds; convert it to milliseconds
-            const curTime = new Date().getTime();
-            if (expTime < curTime) {
-                throw new Error('The token has expired');
-            }
+        // Check to see if the token has expired
+        const expTime = jwtDetails.exp * 1000;  // The time is in seconds; convert it to milliseconds
+        const curTime = new Date().getTime();
+        if (expTime < curTime) {
+            throw new Error('The token has expired');
         }
 
         return true;
