@@ -15,6 +15,24 @@ Install the package with `npm install fit-jwt`. Then, add code to your project a
 **NOTE** A full example exists in the `./_samples` directory. It outlines
 everything required to use this library - including application flows and environment variables.
 
+## Code Coverage (optional)
+
+This project used [c8](https://www.npmjs.com/package/c8) for a brief code coverage assessment.
+However, to keep this a zero dependency library, it was removed. (The assumption is that a
+project will have it's own code coverage suite of tools.) However, it can be re-enabled:
+
+```bash
+npm install --save-dev c8
+```
+
+Update `package.json` to:
+```
+"scripts": {
+    "test": "c8 --clean --reporter=text --reporter=html node --test"
+}
+```
+
+Now it's back.
 
 ## How to build it
 This package can be built and pushed to an NPM registry, such as Verdaccio.

@@ -20,9 +20,14 @@ class JwtTokens {
     }
 }
 
-const ev = await getEnvironmentVariables();
-const AUTH_URL = getOidcProviderURL();
-const tokenURL = getTokenURL();
+// It is critical to call this first. (It was originally at the top level, but that
+// limited the options for writing unit tests.) I'm not sure if this is better or not. 
+let ev, AUTH_URL, tokenURL;
+const init = async () => {
+  ev = await getEnvironmentVariables();
+  AUTH_URL = getOidcProviderURL();
+  tokenURL = getTokenURL();
+};
 
 // PKCE requires these three values: Code Challenge, Code Challenge Method, and Code Verifier
 const getPkceDetails = (pkceMethod ) => {
@@ -128,6 +133,7 @@ const getUserFromToken = (accessToken, verifyTimestamp = true, verifySignature =
 export {
     PkceDetails,
     JwtTokens,
+    init,
     getAuthURL,
     getPkceDetails,
     getJwtToken,

@@ -1,7 +1,7 @@
 import express from 'express';
 import 'dotenv/config'
 
-import { getAuthURL, getPkceDetails, getJwtToken, refreshJwtToken, getUserFromToken } from 'fit-jwt';
+import { getAuthURL, getPkceDetails, getJwtToken, refreshJwtToken, getUserFromToken, init } from 'fit-jwt';
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
@@ -93,6 +93,7 @@ app.get('/testrefresh', async (req, res) => {
 
 const port = process.env.NODEJS_PORT ? process.env.NODEJS_PORT : 3000;
 
-app.listen(port, () =>
+app.listen(port, () =>{
+  init();
   console.log(`Example app listening at http://localhost:${port}`)
-);
+});

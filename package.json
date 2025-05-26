@@ -1,12 +1,12 @@
 {
   "name": "fit-jwt",
-  "version": "0.9.16",
+  "version": "0.9.17",
   "description": "A fit JavaScript library for working with JWT and OIDC",
   "main": "index.js",
   "type": "module",
   "types": "index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "repository": {
     "type": "git",
@@ -25,7 +25,5 @@
   "bugs": {
     "url": "https://github.com/tim1e9/fit-jwt/issues"
   },
-  "homepage": "https://github.com/tim1e9/fit-jwt#readme",
-  "dependencies": {
-  }
+  "homepage": "https://github.com/tim1e9/fit-jwt#readme"
 }
