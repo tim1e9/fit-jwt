@@ -96,7 +96,7 @@ const getTokenURL = () => {
 }
 
 // Some folks don't validate the signature. That would be a pretty big mistake
-const _isValidSignature = (rawToken) => {
+const isValidSignature = (rawToken) => {
     try {
         const [ rawTokenHeader, rawTokenPayload, rawTokenSignature] = rawToken.split('.');
         const tokenSignature = Buffer.from(rawTokenSignature, 'base64url');
@@ -121,38 +121,5 @@ const _isValidSignature = (rawToken) => {
     }
 }
 
-const isTokenValid = (curToken) => {
-    try {
-        const [_jwtHeader, jwtPayload, _jwtSignature] = curToken.split('.');
-        if (!_isValidSignature(curToken)) {
-            throw new Error('The JSON signature is not valid.')
-        }
 
-        const jwtDetails = JSON.parse(Buffer.from(jwtPayload, 'base64url').toString());
-
-        // More checks: An attacker could replay a valid token from another client or issuer
-        // Make sure the returned values match what's expected
-        if (jwtDetails.aud != ev.CLIENT_ID) {
-            throw new Error(`The token audience doesn't match what was sent`)
-        }
-        // The issuer is the host, but a simple way to test is to see how it compares to the JWKS URL
-        if (ev.JWKS_URL.substring(jwtDetails.iss) < 0) {
-            throw new Error(`The issuer for the token is different from what is expected.`)
-        }
-
-        // Check to see if the token has expired
-        const expTime = jwtDetails.exp * 1000;  // The time is in seconds; convert it to milliseconds
-        const curTime = new Date().getTime();
-        if (expTime < curTime) {
-            throw new Error('The token has expired');
-        }
-
-        return true;
-    } catch(exc) {
-        console.error(`Error parsing the jwtDetails from a token: ${exc.message}`);
-    }
-    return false;
-}
-
-
-export { getEnvironmentVariables, getOidcProviderURL, getTokenURL, getPublicKey, isTokenValid }
+export { getEnvironmentVariables, getOidcProviderURL, getTokenURL, getPublicKey, isValidSignature }

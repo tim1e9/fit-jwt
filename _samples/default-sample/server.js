@@ -1,7 +1,7 @@
 import express from 'express';
 import 'dotenv/config'
 
-import { getAuthURL, getPkceDetails, getJwtToken, refreshJwtToken, getUserFromToken, init } from 'fit-jwt';
+import { getAuthURL, getPkceDetails, getJwtToken, isTokenValid, refreshJwtToken, getUserFromToken, init } from 'fit-jwt';
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
@@ -34,6 +34,19 @@ app.get('/auth/callback', async (req, res) => {
         // Note: getJwtToken() can throw an exception. A real app should catch and handle it.
         const jwtComponents = await getJwtToken(code, pkceDetails.codeVerifier);
     
+        // An additional audience check for the id token. This will throw an exception if something is wrong
+        // consider gracefully returning the error in a real application
+        isTokenValid(jwtComponents.idToken, "id_token")
+
+
+        // Some notes for your consideration:
+        // Consider pulling and validating ID token's "sub" claim, and use it to create / look up the user
+        // It may be something like: ABCD-1234-EFGH-5678-IJKL9012MNOPQ
+        // You can then map that to something like email, so that a human can understand it.
+
+        // The ID token can be used to display user friendly stuff in the UI
+        // The access token is what should be used when making API calls.
+
         // Clear the cookie - it's no longer needed
         res.clearCookie(cookieName);
     
@@ -52,12 +65,16 @@ app.get('/logout/callback', (_req, res) => {
 // This should be used as Express middleware before every secure route is called. It will attempt
 // to verify the user details, and if valid, place those details within the request.
 const checkAuthenticated = (req, res, next) => {
-    const token = req.header(jwtHeaderName)
-    if (!token) {
+    const accessToken = req.header(jwtHeaderName)
+    if (!accessToken) {
         res.status(401).json({message: 'User does not have credentials'});
         return;
     }
-    const user = getUserFromToken(token);
+    
+    // It might be a good idea to make sure the user didn't mistakenly send in the id_token
+    // It's a common mistake, but for now, it's left as an open to do.
+    const user = getUserFromToken(accessToken);
+
     if (!user) {
         res.status(401).json({message: 'User details are missing. Does the user have valid credentials?'});
         return;

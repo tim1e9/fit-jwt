@@ -39,5 +39,5 @@ This package can be built and pushed to an NPM registry, such as Verdaccio.
 
 To use it,
 Run npm pack
-Run npm publish --registry http://localhost:4873
+Run npm publish --registry http://noobnoob.local:4873
 

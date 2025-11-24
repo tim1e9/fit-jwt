@@ -1,6 +1,6 @@
 // @ts-check intermittently, because this is actually JavaScript
 import { randomBytes, createHash } from 'crypto';
-import { getEnvironmentVariables, getOidcProviderURL, getTokenURL, isTokenValid } from './utils.js';
+import { getEnvironmentVariables, getOidcProviderURL, getTokenURL, isValidSignature } from './utils.js';
 
 // ----- A class / data type for the PKCE details -----
 class PkceDetails {
@@ -76,7 +76,7 @@ const getJwtToken = async (code, codeVerifier) => {
 
         // Format the response to include the three retrieved tokens
         const allData = await response.json();
-        const jwtTokens = new JwtTokens(allData.accessToken,
+        const jwtTokens = new JwtTokens(allData.access_token,
                                     allData.id_token, allData.refresh_token);
         return jwtTokens;
 
@@ -120,14 +120,54 @@ const refreshJwtToken = async (refreshToken) => {
     }
 }
 
+// This can get confusing. This is called to access resources, so we really need
+// the access token. However, we're grabbing the current user's details, so it feels
+// like we should use the id_token. Resist the urge to use the id_token. What a mess.
 const getUserFromToken = (accessToken) => {
-    const validToken = isTokenValid(accessToken)
+    const validToken = isTokenValid(accessToken, "access_token")
     if ( !validToken) {
         return null;
     }
     const [_jwtHeader, jwtPayload, _jwtSignature] = accessToken.split('.');
     const user = JSON.parse(Buffer.from(jwtPayload, 'base64url').toString());
     return user;
+}
+
+const isTokenValid = (curToken, tokenType) => {
+    try {
+        if (!["id_token", "access_token"].includes(tokenType)) {
+            throw new Error('Invalid token type, only id_token and access_token are allowed.')
+        }
+        const [_jwtHeader, jwtPayload, _jwtSignature] = curToken.split('.');
+        if (!isValidSignature(curToken)) {
+            throw new Error('The JSON signature is not valid.')
+        }
+
+        const jwtDetails = JSON.parse(Buffer.from(jwtPayload, 'base64url').toString());
+
+        // The issuer is the host, but a simple way to test is to see how it compares to the JWKS URL
+        if (ev.JWKS_URL.substring(jwtDetails.iss) < 0) {
+            throw new Error(`The issuer for the token is different from what is expected.`)
+        }
+
+        // More checks: An attacker could replay a valid token from another client or issuer
+        // Make sure the returned values match what's expected
+        if ((tokenType == "id_token") && (jwtDetails.aud != ev.CLIENT_ID)) {
+            throw new Error(`The token audience doesn't match what was sent`)
+        }
+
+        // Check to see if the token has expired
+        const expTime = jwtDetails.exp * 1000;  // The time is in seconds; convert it to milliseconds
+        const curTime = new Date().getTime();
+        if (expTime < curTime) {
+            throw new Error('The token has expired');
+        }
+
+        return true;
+    } catch(exc) {
+        console.error(`Error parsing the jwtDetails from a token: ${exc.message}`);
+    }
+    return false;
 }
 
 export {
@@ -138,5 +178,6 @@ export {
     getPkceDetails,
     getJwtToken,
     refreshJwtToken,
-    getUserFromToken
+    getUserFromToken,
+    isTokenValid
 }

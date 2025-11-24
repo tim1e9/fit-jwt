@@ -23,3 +23,5 @@ export function getJwtToken(code: string, codeVerifier: string): Promise<JwtToke
 export function refreshJwtToken(refreshToken: string): Promise<JwtTokens>;
 
 export function getUserFromToken(accessToken: string): Record<string, any> | null;
+
+export function isTokenValid(curToken: string, tokenType: string): boolean;
